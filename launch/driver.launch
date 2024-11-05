@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="open_rviz" default="false" doc="Open rviz"/>
+
+  <arg name="joint_states_topic" default="/joint_states"/>
+
+  <arg name="imitation" default="false" doc="Use simple imitation"/>  
+  <!-- <arg name="robot_description_launch_file" default="$(find variator_descriptions)/launch/load_$(arg scene).launch" doc="Robot description launch file."/> -->
+
+
+  <rosparam file="$(find variator_driver)/config/controllers.yaml" command="load"/>
+ 
+
+  <!-- load robot description -->
+  <!-- <include file="$(arg robot_description_launch_file)"/> -->
+
+
+  <!-- robot_state_publisher - publish joint TF (discribed in scene urdf), by position in topic joint_states -->
+  <!-- <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <param name="publish_frequency" value="500.0"/>
+  </node> -->
+
+
+  <node name="variator_driver" pkg="variator_driver" type="variator_driver" respawn="false"
+      output="screen" required="true">   
+      <remap from="joint_states" to="$(arg joint_states_topic)"/>
+  </node>
+  
+
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+      output="screen" args="
+                            joint_state_controller  
+                            ackermann_controller
+                            diff_controller
+                            " />
+
+
+
+  <group if="$(arg open_rviz)">
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find variator_driver)/cfg/view_robot.rviz" required="true" />
+  </group>  
+
+</launch>

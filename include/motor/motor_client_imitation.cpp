@@ -1,4 +1,4 @@
-#include <motor_imitator/motor_client_imitation.hpp>
+#include <motor/motor_client_imitation.hpp>
 
 namespace motor_client {
 MotorClientImitation::MotorClientImitation(double rate_) : rate(rate_) {

@@ -1,7 +1,7 @@
 #pragma once
 
 //
-#include <motor_imitator/motor_client_interface.hpp>
+#include <motor/motor_client_interface.hpp>
 
 //
 #include <atomic>

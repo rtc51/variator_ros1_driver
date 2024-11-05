@@ -19,6 +19,20 @@ VariatorHardwareInterface::VariatorHardwareInterface(ros::NodeHandle& nh_)
   registerVelocityInterface(front_right_joint);
   registerVelocityInterface(rear_right_joint);
   registerVelocityInterface(rear_left_joint);
+
+  registerInterface(&jnt_state_interface);
+  registerInterface(&jnt_pos_interface);
+  registerInterface(&jnt_vel_interface);
+  registerInterface(&jnt_eff_interface);
+
+  set_ratio_srv = nh.advertiseService(
+      "set_ratio", &VariatorHardwareInterface::setRatioCallback, this);
+
+  set_led_srv = nh.advertiseService(
+      "set_led", &VariatorHardwareInterface::setLedCallback, this);
+
+  variator_states_pub =
+      nh.advertise<variator_driver::VariatorStates>("variator_states", 1);
 }
 
 void VariatorHardwareInterface::write(ros::Duration elapsed_time) {
@@ -61,12 +75,20 @@ void VariatorHardwareInterface::read() {
   rear_left_joint.position = state_rear_left.position;
   rear_left_joint.velocity = state_rear_left.velocity;
   rear_left_joint.effort = state_rear_left.effort;
+
+  variator_driver::VariatorStates variator_states;
+  variator_states.status = variator_driver::VariatorStates::OK;
+  variator_states.battery_voltage = battery.getVoltage();
+  variator_states.battery_charge = battery.getCharge();
+  variator_states.led_state = led.getLedState();
+  variator_states.variator_ratio = variator.getRatio();
+  variator_states_pub.publish(variator_states);
 }
 
 void VariatorHardwareInterface::doSwitch(
     const std::list<hardware_interface::ControllerInfo>& start_list,
     const std::list<hardware_interface::ControllerInfo>& stop_list) {
-  // TODO: implement
+  // TODO: implement (if needed)
 }
 
 void VariatorHardwareInterface::registerStateInterface(Joint& joint) {
@@ -98,4 +120,29 @@ void VariatorHardwareInterface::registerEffortInterface(Joint& joint) {
   hardware_interface::JointHandle eff_handle(
       jnt_state_interface.getHandle(joint.name), &joint.effort_command);
   jnt_eff_interface.registerHandle(eff_handle);
+}
+
+bool VariatorHardwareInterface::setRatioCallback(
+    variator_driver::SetRatioRequest& req,
+    variator_driver::SetRatioResponse& res) {
+  try {
+    variator.setRatio(req.ratio);
+    res.success = true;
+  } catch (const std::exception& e) {
+    res.success = false;
+    res.error_message = e.what();
+  }
+  return true;
+}
+
+bool VariatorHardwareInterface::setLedCallback(
+    variator_driver::SetLedRequest& req, variator_driver::SetLedResponse& res) {
+  try {
+    led.setLedState(req.led_state);
+    res.success = true;
+  } catch (const std::exception& e) {
+    res.success = false;
+    res.error_message = e.what();
+  }
+  return true;
 }
